@@ -1,4 +1,3 @@
-
 import { GoogleGenAI, Type } from "@google/genai";
 import type { Track, Playlist } from '../types';
 
@@ -28,9 +27,13 @@ const playlistSchema = {
           album: {
             type: Type.STRING,
             description: "The album the song belongs to.",
+          },
+          youtubeId: {
+            type: Type.STRING,
+            description: "The YouTube video ID for this song."
           }
         },
-        required: ["title", "artist", "album"],
+        required: ["title", "artist", "album", "youtubeId"],
       },
     },
   },
@@ -46,7 +49,7 @@ export const generatePlaylist = async (prompt: string): Promise<Playlist> => {
   try {
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
-      contents: `Create a playlist of 5-10 songs based on this theme: "${prompt}".`,
+      contents: `Create a playlist of 5-10 songs based on this theme: "${prompt}". For each song, provide its title, artist, album, and a valid YouTube video ID.`,
       config: {
         responseMimeType: "application/json",
         responseSchema: playlistSchema,
@@ -61,15 +64,16 @@ export const generatePlaylist = async (prompt: string): Promise<Playlist> => {
         title: track.title,
         artist: track.artist,
         album: track.album,
-        duration: `${Math.floor(Math.random() * 3) + 2}:${Math.floor(Math.random() * 60).toString().padStart(2, '0')}`,
-        coverArt: `https://picsum.photos/seed/${encodeURIComponent(track.title)}/200`
+        youtubeId: track.youtubeId,
+        duration: `${Math.floor(Math.random() * 3) + 3}:${Math.floor(Math.random() * 60).toString().padStart(2, '0')}`,
+        coverArt: `https://i.ytimg.com/vi/${track.youtubeId}/hqdefault.jpg`
     }));
 
     const newPlaylist: Playlist = {
         id: `pl-gen-${Date.now()}`,
         name: `AI: ${prompt}`,
         creator: 'Gemini',
-        coverArt: `https://picsum.photos/seed/${encodeURIComponent(prompt)}/400`,
+        coverArt: newTracks.length > 0 ? newTracks[0].coverArt : `https://picsum.photos/seed/${encodeURIComponent(prompt)}/400`,
         tracks: newTracks
     };
 

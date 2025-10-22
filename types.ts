@@ -1,4 +1,3 @@
-
 export interface Track {
   id: string;
   title: string;
@@ -6,6 +5,7 @@ export interface Track {
   album: string;
   duration: string;
   coverArt: string;
+  youtubeId: string;
 }
 
 export interface Playlist {

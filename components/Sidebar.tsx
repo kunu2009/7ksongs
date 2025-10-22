@@ -7,27 +7,75 @@ interface SidebarProps {
   playlists: Playlist[];
   onSelectPlaylist: (playlist: Playlist) => void;
   selectedPlaylistId: string | null;
+  searchQuery: string;
+  setSearchQuery: (query: string) => void;
+  activeView: string;
+  setActiveView: (view: 'home' | 'search') => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ playlists, onSelectPlaylist, selectedPlaylistId }) => {
+const Sidebar: React.FC<SidebarProps> = ({
+  playlists,
+  onSelectPlaylist,
+  selectedPlaylistId,
+  searchQuery,
+  setSearchQuery,
+  activeView,
+  setActiveView,
+}) => {
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const query = e.target.value;
+    setSearchQuery(query);
+    if (query.trim()) {
+      setActiveView('search');
+    }
+  };
+  
+  const handleSearchFocus = () => {
+    setActiveView('search');
+  };
+
+  const handleHomeClick = () => {
+    setSearchQuery('');
+    setActiveView('home');
+  };
+
   return (
     <div className="bg-black text-gray-300 w-64 p-2 space-y-2 flex flex-col h-full">
-      <div className="bg-zinc-900 rounded-lg p-2 space-y-4">
-        <NavItem Icon={HomeIcon} label="Home" />
-        <NavItem Icon={SearchIcon} label="Search" />
+      <div className="bg-zinc-900 rounded-lg p-2 space-y-2">
+        <NavItem
+          Icon={HomeIcon}
+          label="Home"
+          isActive={activeView === 'home'}
+          onClick={handleHomeClick}
+        />
+        <div 
+          className={`flex items-center w-full gap-4 px-4 py-2 font-bold transition-colors duration-200 rounded-md cursor-text ${activeView === 'search' ? 'text-white' : 'text-gray-400 hover:text-white'}`}
+          onClick={() => document.getElementById('sidebar-search')?.focus()}
+        >
+          <SearchIcon className="w-6 h-6 flex-shrink-0" />
+          <input
+            id="sidebar-search"
+            type="text"
+            placeholder="Search"
+            value={searchQuery}
+            onChange={handleSearchChange}
+            onFocus={handleSearchFocus}
+            className="bg-transparent focus:outline-none w-full placeholder-gray-400"
+          />
+        </div>
       </div>
-      <div className="bg-zinc-900 rounded-lg flex-grow p-2">
+      <div className="bg-zinc-900 rounded-lg flex-grow p-2 flex flex-col">
         <div className="flex items-center gap-4 px-4 pb-2 text-gray-300">
           <LibraryIcon className="w-6 h-6" />
           <span className="font-bold">Your Library</span>
         </div>
-        <div className="space-y-1 overflow-y-auto max-h-[calc(100vh-250px)] pr-2">
+        <div className="space-y-1 overflow-y-auto flex-grow pr-2">
           {playlists.map((playlist) => (
             <div
               key={playlist.id}
               onClick={() => onSelectPlaylist(playlist)}
               className={`flex items-center gap-3 p-2 rounded-md cursor-pointer transition-colors duration-200 ${
-                selectedPlaylistId === playlist.id
+                selectedPlaylistId === playlist.id && activeView === 'home'
                   ? 'bg-zinc-700 text-white'
                   : 'hover:bg-zinc-800'
               }`}
@@ -48,13 +96,20 @@ const Sidebar: React.FC<SidebarProps> = ({ playlists, onSelectPlaylist, selected
 interface NavItemProps {
   Icon: React.ElementType;
   label: string;
+  isActive?: boolean;
+  onClick?: () => void;
 }
 
-const NavItem: React.FC<NavItemProps> = ({ Icon, label }) => (
-  <a href="#" className="flex items-center gap-4 px-4 py-2 text-gray-300 hover:text-white font-bold transition-colors duration-200">
+const NavItem: React.FC<NavItemProps> = ({ Icon, label, isActive, onClick }) => (
+  <button
+    onClick={onClick}
+    className={`flex items-center w-full gap-4 px-4 py-2 font-bold transition-colors duration-200 rounded-md ${
+      isActive ? 'text-white' : 'text-gray-400 hover:text-white'
+    }`}
+  >
     <Icon className="w-6 h-6" />
     <span>{label}</span>
-  </a>
+  </button>
 );
 
 export default Sidebar;

@@ -3,6 +3,7 @@ import React, { useState, useCallback, useMemo } from 'react';
 import Sidebar from './components/Sidebar';
 import MainView from './components/MainView';
 import Player from './components/Player';
+import SearchView from './components/SearchView';
 import { INITIAL_PLAYLISTS } from './constants';
 import type { Playlist, Track } from './types';
 
@@ -11,25 +12,35 @@ function App() {
   const [selectedPlaylist, setSelectedPlaylist] = useState<Playlist | null>(playlists[0] || null);
   const [currentTrack, setCurrentTrack] = useState<Track | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
-  
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeView, setActiveView] = useState('home'); // 'home' or 'search'
+
   const currentTrackIndex = useMemo(() => {
     if (!selectedPlaylist || !currentTrack) return -1;
     return selectedPlaylist.tracks.findIndex(t => t.id === currentTrack.id);
   }, [selectedPlaylist, currentTrack]);
 
+  const allTracks = useMemo(() => playlists.flatMap(p => p.tracks), [playlists]);
+
+  const filteredSidebarPlaylists = useMemo(() => {
+    if (!searchQuery.trim()) {
+      return playlists;
+    }
+    return playlists.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()));
+  }, [playlists, searchQuery]);
+
   const handleSelectPlaylist = useCallback((playlist: Playlist) => {
     setSelectedPlaylist(playlist);
+    setActiveView('home');
+    setSearchQuery('');
   }, []);
 
   const handlePlayTrack = useCallback((track: Track) => {
-    // If it's the same track, toggle play/pause
     if (currentTrack?.id === track.id) {
       setIsPlaying(prev => !prev);
     } else {
-      // If it's a new track, start playing it
       setCurrentTrack(track);
       setIsPlaying(true);
-      // Ensure the playlist containing the track is selected
       const parentPlaylist = playlists.find(p => p.tracks.some(t => t.id === track.id));
       if (parentPlaylist) {
         setSelectedPlaylist(parentPlaylist);
@@ -60,23 +71,40 @@ function App() {
   const handlePlaylistGenerated = useCallback((newPlaylist: Playlist) => {
     setPlaylists(prev => [newPlaylist, ...prev]);
     setSelectedPlaylist(newPlaylist);
+    setActiveView('home');
   }, []);
 
   return (
     <div className="h-screen w-screen flex flex-col font-sans overflow-hidden">
       <div className="flex flex-1 overflow-hidden">
         <Sidebar 
-          playlists={playlists}
+          playlists={filteredSidebarPlaylists}
           onSelectPlaylist={handleSelectPlaylist}
           selectedPlaylistId={selectedPlaylist?.id || null}
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          activeView={activeView}
+          setActiveView={setActiveView}
         />
-        <MainView 
-          playlist={selectedPlaylist}
-          onPlayTrack={handlePlayTrack}
-          currentTrack={currentTrack}
-          isPlaying={isPlaying}
-          onPlaylistGenerated={handlePlaylistGenerated}
-        />
+        {activeView === 'search' ? (
+          <SearchView
+            searchQuery={searchQuery}
+            allPlaylists={playlists}
+            allTracks={allTracks}
+            onPlayTrack={handlePlayTrack}
+            onSelectPlaylist={handleSelectPlaylist}
+            currentTrack={currentTrack}
+            isPlaying={isPlaying}
+          />
+        ) : (
+          <MainView 
+            playlist={selectedPlaylist}
+            onPlayTrack={handlePlayTrack}
+            currentTrack={currentTrack}
+            isPlaying={isPlaying}
+            onPlaylistGenerated={handlePlaylistGenerated}
+          />
+        )}
       </div>
       <Player 
         currentTrack={currentTrack}

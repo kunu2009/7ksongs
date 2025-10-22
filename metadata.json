@@ -1,0 +1,5 @@
+{
+  "name": "AuraBeat Music Player",
+  "description": "A unique, comfortable, and AI-powered music player with a UI/UX inspired by Spotify. Generate custom playlists based on your mood using the Gemini API.",
+  "requestFramePermissions": []
+}
